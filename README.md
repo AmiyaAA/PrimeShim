@@ -2,6 +2,8 @@
 
 **中文** | [English](#english)
 
+![PrimeShim on Android](screenshots/demo_1.png)
+
 HP Prime 固件的 Android 兼容层。PrimeShim 不模拟 CPU，而是把原厂 ARM ELF 直接作为 32 位原生进程运行，并在运行时把 BESTA 系统调用和硬件访问接到
 Android/Linux 实现上。
 
