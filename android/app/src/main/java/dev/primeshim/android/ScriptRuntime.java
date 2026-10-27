@@ -160,6 +160,12 @@ public final class ScriptRuntime {
 
         @JavascriptInterface
         public void touch(int action, int id, int x, int y) {
+            if (id < 0 || id > 7 || action < 1 || action > 3) {
+                postLog("Invalid touch: id=" + id + " action=" + action);
+                return;
+            }
+            x = Math.max(0, Math.min(319, x));
+            y = Math.max(0, Math.min(239, y));
             PrimeShim.nativeTouchMulti(new int[]{action}, new int[]{id},
                     new int[]{x}, new int[]{y});
         }

@@ -3668,6 +3668,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     @Override
     public void onBackPressed() {
         if (!pageStack.isEmpty()) {
+            if (scriptEditor != null) saveScript();
             popPage();
             return;
         }
@@ -3688,6 +3689,10 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     protected void onDestroy() {
         uiHandler.removeCallbacks(logRefresh);
         uiHandler.removeCallbacks(guestCrashWatch);
+        if (scriptRuntime != null) {
+            scriptRuntime.destroy();
+            scriptRuntime = null;
+        }
         PrimeShim.nativeStop();
         super.onDestroy();
     }
