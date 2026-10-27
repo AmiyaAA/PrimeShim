@@ -44,6 +44,7 @@ public final class L {
         EN.put("脚本为空", "The script is empty");
         EN.put("已停止", "Stopped");
         EN.put("脚本已导入", "Script imported");
+        EN.put("脚本已导出", "Script exported");
         EN.put("停止", "Stop");
         EN.put("追踪", "Trace");
         EN.put("导出", "Export");
@@ -222,6 +223,7 @@ public final class L {
         FR.put("脚本为空", "Le script est vide");
         FR.put("已停止", "Arrêté");
         FR.put("脚本已导入", "Script importé");
+        FR.put("脚本已导出", "Script exporté");
         FR.put("停止", "Arrêter");
         FR.put("追踪", "Tracer");
         FR.put("导出", "Exporter");

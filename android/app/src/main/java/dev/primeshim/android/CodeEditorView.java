@@ -12,7 +12,10 @@ import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.AppCompatEditText;
@@ -31,6 +34,7 @@ public final class CodeEditorView extends LinearLayout {
     private final AppCompatEditText editor;
     private final TextView gutter;
     private final View divider;
+    private final ScrollView verticalScroll;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable gutterTask = this::updateGutter;
     private final Runnable highlightTask = this::highlight;
@@ -60,6 +64,9 @@ public final class CodeEditorView extends LinearLayout {
         divider = new View(context);
         addView(divider, new LayoutParams(dp(1), LayoutParams.MATCH_PARENT));
 
+        FrameLayout host = new FrameLayout(context);
+        addView(host, new LayoutParams(0, LayoutParams.MATCH_PARENT, 1f));
+
         editor = new AppCompatEditText(context);
         editor.setBackground(null);
         editor.setTypeface(Typeface.MONOSPACE);
@@ -73,7 +80,25 @@ public final class CodeEditorView extends LinearLayout {
                 | InputType.TYPE_TEXT_FLAG_MULTI_LINE
                 | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         editor.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
-        addView(editor, new LayoutParams(0, LayoutParams.MATCH_PARENT, 1f));
+
+        verticalScroll = new ScrollView(context);
+        verticalScroll.setFillViewport(true);
+        verticalScroll.setClipToPadding(false);
+        verticalScroll.setHorizontalScrollBarEnabled(false);
+        verticalScroll.addView(editor, new ScrollView.LayoutParams(
+                ScrollView.LayoutParams.WRAP_CONTENT,
+                ScrollView.LayoutParams.WRAP_CONTENT));
+
+        HorizontalScrollView horizontalScroll = new HorizontalScrollView(context);
+        horizontalScroll.setFillViewport(true);
+        horizontalScroll.setSmoothScrollingEnabled(true);
+        horizontalScroll.setVerticalScrollBarEnabled(false);
+        horizontalScroll.addView(verticalScroll, new HorizontalScrollView.LayoutParams(
+                HorizontalScrollView.LayoutParams.WRAP_CONTENT,
+                HorizontalScrollView.LayoutParams.MATCH_PARENT));
+        host.addView(horizontalScroll, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
 
         editor.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start,
@@ -89,8 +114,10 @@ public final class CodeEditorView extends LinearLayout {
                 handler.post(gutterTask);
             }
         });
-        editor.setOnScrollChangeListener((v, scrollX, scrollY, oldX, oldY) ->
+        verticalScroll.setOnScrollChangeListener((v, scrollX, scrollY, oldX, oldY) ->
                 gutter.scrollTo(0, scrollY));
+        editor.setOnScrollChangeListener((v, scrollX, scrollY, oldX, oldY) ->
+                gutter.scrollTo(0, verticalScroll.getScrollY() + scrollY));
         setDark(false);
         updateGutter();
     }

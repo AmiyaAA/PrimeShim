@@ -112,6 +112,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private static final int REQUEST_FM_IMPORT = 1005;
     private static final int REQUEST_FM_EXPORT = 1006;
     private static final int REQUEST_SCRIPT_IMPORT = 1007;
+    private static final int REQUEST_SCRIPT_EXPORT = 1008;
 
     /** Restart after importing/clearing: the system splash is enough, do not
      *  play the in-app logo animation a second time. */
@@ -135,6 +136,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private ScrollView terminalScroll;
     private LinearLayout terminalPage;
     private final StringBuilder terminalBuffer = new StringBuilder();
+    private String scriptExportText;
     private LinearLayout docList;
     private List<ScriptDocs.Entry> docEntries;
 
@@ -1049,6 +1051,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 iconButton(R.drawable.ic_play, L.t("运行"), this::runScript),
                 iconButton(R.drawable.ic_stop, L.t("停止"), this::stopScript),
                 iconButton(R.drawable.ic_file_upload, L.t("导入"), this::pickScript),
+                iconButton(R.drawable.ic_file_download, L.t("导出"), this::exportScript),
                 iconButton(R.drawable.ic_code, L.t("示例"), () -> {
                     scriptEditor.setText(SCRIPT_SAMPLE);
                     saveScript();
@@ -1298,6 +1301,41 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         } catch (Exception error) {
             snack(L.t("没有可用的文件选择器"));
         }
+    }
+
+    private void exportScript() {
+        if (scriptEditor == null) return;
+        scriptExportText = scriptEditor.getText().toString();
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/javascript");
+        intent.putExtra(Intent.EXTRA_TITLE, "primeshim.js");
+        try {
+            startActivityForResult(intent, REQUEST_SCRIPT_EXPORT);
+        } catch (Exception error) {
+            scriptExportText = null;
+            snack(L.t("没有可用的文件选择器"));
+        }
+    }
+
+    private void writeScriptUri(final Uri uri, final String text) {
+        new Thread(() -> {
+            boolean ok = false;
+            try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                if (out != null) {
+                    out.write(text.getBytes("UTF-8"));
+                    out.flush();
+                    ok = true;
+                }
+            } catch (Exception error) {
+                Log.w(TAG, "cannot export script", error);
+            }
+            final boolean success = ok;
+            runOnUiThread(() -> {
+                if (success) snack(L.t("脚本已导出"));
+                else snack(L.t("导出失败：") + uri);
+            });
+        }, "primeshim-script-export").start();
     }
 
     private void importScript(final Uri uri) {
@@ -3262,6 +3300,14 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 writeZip(data.getData(), pendingExportDir, pendingExportLabel);
             }
             pendingExportDir = null;
+            return;
+        }
+        if (requestCode == REQUEST_SCRIPT_EXPORT) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null
+                    && scriptExportText != null) {
+                writeScriptUri(data.getData(), scriptExportText);
+            }
+            scriptExportText = null;
             return;
         }
         if (requestCode == REQUEST_SCRIPT_IMPORT) {
