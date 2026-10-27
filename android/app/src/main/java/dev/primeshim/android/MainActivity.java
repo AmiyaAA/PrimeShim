@@ -25,6 +25,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.util.TypedValue;
@@ -38,6 +39,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -107,6 +109,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private static final int REQUEST_BACKUP_EXPORT = 1004;
     private static final int REQUEST_FM_IMPORT = 1005;
     private static final int REQUEST_FM_EXPORT = 1006;
+    private static final int REQUEST_SCRIPT_IMPORT = 1007;
 
     /** Restart after importing/clearing: the system splash is enough, do not
      *  play the in-app logo animation a second time. */
@@ -124,6 +127,9 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private int speedPercent = 100;
     private CrosshairView crosshair;
     private FrameLayout root;
+    private ScriptRuntime scriptRuntime;
+    private EditText scriptEditor;
+    private TextView scriptLog;
 
     /** Android pointer id -> firmware touch slot (0..7). */
     private final SparseIntArray touchSlots = new SparseIntArray();
@@ -876,12 +882,13 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        final String[] items = {L.t("设置"), L.t("日志"), L.t("键盘"), L.t("固件"), L.t("文件管理"), L.t("备份"),
-                L.t("关于")};
+        final String[] items = {L.t("设置"), L.t("日志"), L.t("键盘"), L.t("脚本"),
+                L.t("固件"), L.t("文件管理"), L.t("备份"), L.t("关于")};
         final Runnable[] actions = {
                 this::showSettings,
                 this::toggleLog,
                 this::toggleKeyboard,
+                this::showScriptEditor,
                 this::promptFirmwareImport,
                 this::showFileManager,
                 this::showBackupMenu,
@@ -977,6 +984,172 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
 
         renderFileManager();
         pushPage(buildPage(L.t("文件管理"), content, this::popPage));
+    }
+
+    private static final String SCRIPT_SAMPLE =
+            "// PrimeShim JavaScript\n" +
+            "// await prime.press('1');\n" +
+            "// await prime.touchTap(0, 160, 120);\n" +
+            "prime.log('Hello from JavaScript');\n" +
+            "await prime.press('1');\n" +
+            "await prime.press('+');\n" +
+            "await prime.press('2');\n" +
+            "await prime.press('enter');\n" +
+            "prime.log('Keys sent');\n";
+
+    private void showScriptEditor() {
+        if (scriptRuntime == null) {
+            scriptRuntime = new ScriptRuntime(this, root, new ScriptRuntime.Listener() {
+                @Override public void onScriptLog(String line) {
+                    scriptLogLine(line);
+                }
+
+                @Override public void onScriptFinished() {
+                    // The bridge already appended the completion line.
+                }
+            });
+        }
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+
+        TextView intro = new TextView(this);
+        intro.setText(L.t("JavaScript 脚本控制模拟器。可用 prime.press、prime.key、prime.touchDown/move/up、prime.touchTap、prime.sleep、prime.log。"));
+        applyTextAppearance(intro,
+                com.google.android.material.R.attr.textAppearanceBodyMedium);
+        intro.setTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurfaceVariant));
+        intro.setPadding(dp(4), 0, dp(4), dp(12));
+        content.addView(intro, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        MaterialCardView editorCard = filledCard();
+        scriptEditor = new EditText(this);
+        scriptEditor.setText(settings().getString("script", SCRIPT_SAMPLE));
+        scriptEditor.setTextSize(13);
+        scriptEditor.setTypeface(Typeface.MONOSPACE);
+        scriptEditor.setTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurface));
+        scriptEditor.setHintTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurfaceVariant));
+        scriptEditor.setHint(L.t("在此输入 JavaScript"));
+        scriptEditor.setGravity(Gravity.TOP | Gravity.START);
+        scriptEditor.setPadding(dp(16), dp(16), dp(16), dp(16));
+        scriptEditor.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        scriptEditor.setHorizontallyScrolling(false);
+        scriptEditor.setMinLines(12);
+        editorCard.addView(scriptEditor, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(340)));
+        content.addView(editorCard, cardParams());
+
+        content.addView(buttonRow(dp(8),
+                filledButton(L.t("运行"), v -> runScript()),
+                tonalButton(L.t("停止"), v -> stopScript())));
+
+        content.addView(buttonRow(dp(4),
+                tonalButton(L.t("导入"), v -> pickScript()),
+                textButton(L.t("示例"), v -> {
+                    scriptEditor.setText(SCRIPT_SAMPLE);
+                    saveScript();
+                })));
+
+        scriptLog = new TextView(this);
+        scriptLog.setTextSize(12);
+        scriptLog.setTypeface(Typeface.MONOSPACE);
+        scriptLog.setTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurfaceVariant));
+        scriptLog.setPadding(dp(16), dp(12), dp(16), dp(12));
+        scriptLog.setTextIsSelectable(true);
+        MaterialCardView logCard = filledCard();
+        logCard.addView(scriptLog, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(150)));
+        content.addView(logCard, cardParams());
+
+        pushPage(buildPage(L.t("脚本"), content, () -> {
+            saveScript();
+            popPage();
+        }));
+    }
+
+    private void runScript() {
+        if (scriptEditor == null || scriptRuntime == null) return;
+        String source = scriptEditor.getText().toString();
+        if (source.trim().isEmpty()) {
+            snack(L.t("脚本为空"));
+            return;
+        }
+        saveScript();
+        if (scriptLog != null) scriptLog.setText("");
+        scriptRuntime.run(source);
+    }
+
+    private void stopScript() {
+        if (scriptRuntime != null) scriptRuntime.stop();
+        snack(L.t("已停止"));
+    }
+
+    private void saveScript() {
+        if (scriptEditor == null) return;
+        settings().edit().putString("script", scriptEditor.getText().toString()).apply();
+    }
+
+    private void pickScript() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES,
+                new String[]{"text/*", "application/javascript", "application/x-javascript"});
+        try {
+            startActivityForResult(intent, REQUEST_SCRIPT_IMPORT);
+        } catch (Exception error) {
+            snack(L.t("没有可用的文件选择器"));
+        }
+    }
+
+    private void importScript(final Uri uri) {
+        new Thread(() -> {
+            String text = null;
+            try (InputStream in = getContentResolver().openInputStream(uri)) {
+                if (in != null) {
+                    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                    byte[] buffer = new byte[8192];
+                    int total = 0;
+                    int read;
+                    while ((read = in.read(buffer)) > 0) {
+                        total += read;
+                        if (total > 1024 * 1024) {
+                            throw new IOException("script too large");
+                        }
+                        out.write(buffer, 0, read);
+                    }
+                    text = out.toString("UTF-8");
+                }
+            } catch (Exception error) {
+                Log.w(TAG, "cannot import script", error);
+            }
+            final String imported = text;
+            runOnUiThread(() -> {
+                if (imported == null) {
+                    snack(L.t("导入失败：") + uri);
+                    return;
+                }
+                if (scriptEditor != null) {
+                    scriptEditor.setText(imported);
+                    saveScript();
+                }
+                snack(L.t("脚本已导入"));
+            });
+        }, "primeshim-script-import").start();
+    }
+
+    private void scriptLogLine(String line) {
+        if (scriptLog == null) return;
+        String text = scriptLog.getText().toString();
+        if (text.length() > 12000) text = text.substring(text.length() - 8000);
+        scriptLog.setText(text + (text.isEmpty() ? "" : "\n") + line);
     }
 
     private String pathLabel(File file) {
@@ -2955,6 +3128,12 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
             pendingExportDir = null;
             return;
         }
+        if (requestCode == REQUEST_SCRIPT_IMPORT) {
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                importScript(data.getData());
+            }
+            return;
+        }
         if (requestCode == REQUEST_DATA_IMPORT) {
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
                 importDataZip(data.getData());
@@ -3497,6 +3676,12 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
             return;
         }
         super.onBackPressed();
+    }
+
+    @Override
+    protected void onPause() {
+        if (scriptEditor != null) saveScript();
+        super.onPause();
     }
 
     @Override

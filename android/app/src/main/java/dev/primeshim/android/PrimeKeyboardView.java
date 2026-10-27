@@ -164,6 +164,22 @@ public final class PrimeKeyboardView extends View {
      *  verified key by key on the device (esc=0x01, left=0x02, up=0x03,
      *  right=0x04, down=0x05, help=0x95, plot=0xB2, views=0xB4, home=0xE047,
      *  1e/EEX=0x50) and the function row is contiguous from ^ = 0x46. */
+    /** Resolve a script key name, or a numeric/hex code as a fallback. */
+    public static int codeForName(String name) {
+        if (name == null) return -1;
+        Integer mapped = buildKeyMap().get(name.toLowerCase(Locale.US));
+        if (mapped != null) return mapped;
+        try {
+            return Integer.decode(name);
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
+    }
+
+    public static String[] keyNames() {
+        return buildKeyMap().keySet().toArray(new String[0]);
+    }
+
     private static Map<String, Integer> buildKeyMap() {
         Map<String, Integer> map = new HashMap<>();
         map.put("apps", 0xB1);

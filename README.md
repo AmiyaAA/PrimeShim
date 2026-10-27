@@ -29,6 +29,38 @@ Android/Linux 实现上。
 - 可拖动菜单按钮
 - 日志、截图、A:/C: 文件管理、备份/恢复
 
+### JavaScript 脚本
+
+菜单 → **脚本** 打开内置编辑器。脚本可以直接控制固件按键和触摸：
+
+```js
+await prime.press("1");
+await prime.press("+");
+await prime.press("2");
+await prime.press("enter");
+
+await prime.touchTap(0, 160, 120);   // id, x, y
+prime.log("done");
+```
+
+支持的 API：
+
+- `prime.press(name)`：按下并松开一个键，`await` 等待 60ms
+- `prime.key(name, down)`：原始按下/松开，`down` 为 `true`/`false`
+- `prime.keyDown(name)` / `prime.keyUp(name)`
+- `prime.touchDown(id, x, y)` / `prime.touchMove(...)` / `prime.touchUp(...)`
+- `prime.touchTap(id, x, y)`
+- `prime.sleep(ms)`：返回 Promise，配合 `await`
+- `prime.log(...)`：写入脚本日志
+- `prime.keys()`：返回可用键名 JSON
+
+触摸坐标使用固件坐标 `x=0..319`、`y=0..239`。按键名例如
+`enter`、`shift`、`alpha`、`sin`、`cos`、`tan`、`home`、`esc`，
+也接受数字或十六进制键码。
+
+“导入”可以读取外部 `.js` 文件；脚本保存在应用设置中，下次打开编辑器
+会恢复。脚本在 WebView 中运行，不启用网络、文件或 DOM 访问。
+
 ### 设备要求
 
 - Android 8.0+
@@ -114,6 +146,40 @@ runtime.
 - Adjustable font scale
 - Draggable menu button
 - Logs, screenshots, A:/C: file manager and backup/restore
+
+### JavaScript scripting
+
+Open **Menu → Script** to use the built-in editor. Scripts can control
+firmware keys and touch input directly:
+
+```js
+await prime.press("1");
+await prime.press("+");
+await prime.press("2");
+await prime.press("enter");
+
+await prime.touchTap(0, 160, 120);   // id, x, y
+prime.log("done");
+```
+
+API:
+
+- `prime.press(name)`: press and release a key; await the 60 ms gap
+- `prime.key(name, down)`: raw press/release
+- `prime.keyDown(name)` / `prime.keyUp(name)`
+- `prime.touchDown(id, x, y)` / `prime.touchMove(...)` / `prime.touchUp(...)`
+- `prime.touchTap(id, x, y)`
+- `prime.sleep(ms)`: returns a Promise for `await`
+- `prime.log(...)`: append to the script log
+- `prime.keys()`: return the available key names as JSON
+
+Touch coordinates use firmware space: `x=0..319`, `y=0..239`. Key names include
+`enter`, `shift`, `alpha`, `sin`, `cos`, `tan`, `home`, `esc`; numeric and hex
+key codes are also accepted.
+
+**Import** loads an external `.js` file. The editor content is stored in app
+settings and restored next time. Scripts run in a WebView with network, file and
+DOM access disabled.
 
 ### Requirements
 
