@@ -139,6 +139,12 @@ public final class CodeEditorView extends LinearLayout {
     }
 
     @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        handler.post(gutterTask);
+    }
+
+    @Override
     protected void onDetachedFromWindow() {
         handler.removeCallbacks(highlightTask);
         handler.removeCallbacks(gutterTask);
