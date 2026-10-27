@@ -38,7 +38,7 @@ Android/Linux 实现上。
 
 ### 安装
 
-从 GitHub Actions 下载 `primeshim-debug-apk`，然后安装：
+从 [Releases](https://github.com/SQY419/PrimeShim/releases) 下载最新 APK，然后安装：
 
 ```sh
 adb install -r app-debug.apk
@@ -97,7 +97,8 @@ BESTA system calls and hardware accesses into Android/Linux implementations at
 runtime.
 
 > This repository does not ship HP firmware or A:/C: data. Use firmware you are
-> legally allowed to use.
+> legally allowed to use. This public snapshot intentionally contains no signing
+> key and no proprietary HP binaries.
 
 ### Features
 
@@ -127,7 +128,8 @@ runtime.
 
 ### Install
 
-Download `primeshim-debug-apk` from GitHub Actions and install it:
+Download the latest APK from [Releases](https://github.com/SQY419/PrimeShim/releases)
+and install it:
 
 ```sh
 adb install -r app-debug.apk
