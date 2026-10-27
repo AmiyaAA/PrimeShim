@@ -30,6 +30,13 @@ public final class L {
         EN.put("示例", "Example");
         EN.put("帮助", "Help");
         EN.put("脚本帮助", "Script help");
+        EN.put("文档", "Documentation");
+        EN.put("搜索函数", "Search functions");
+        EN.put("没有匹配的函数", "No matching functions");
+        EN.put("签名", "Signature");
+        EN.put("说明", "Description");
+        EN.put("参数", "Parameters");
+        EN.put("返回值", "Returns");
         EN.put("在此输入 JavaScript", "Write JavaScript here");
         EN.put("脚本日志", "Script log");
         EN.put("脚本为空", "The script is empty");
@@ -199,6 +206,13 @@ public final class L {
         FR.put("示例", "Exemple");
         FR.put("帮助", "Aide");
         FR.put("脚本帮助", "Aide du script");
+        FR.put("文档", "Documentation");
+        FR.put("搜索函数", "Rechercher une fonction");
+        FR.put("没有匹配的函数", "Aucune fonction correspondante");
+        FR.put("签名", "Signature");
+        FR.put("说明", "Description");
+        FR.put("参数", "Paramètres");
+        FR.put("返回值", "Retour");
         FR.put("在此输入 JavaScript", "Écrivez le JavaScript ici");
         FR.put("脚本日志", "Journal du script");
         FR.put("脚本为空", "Le script est vide");

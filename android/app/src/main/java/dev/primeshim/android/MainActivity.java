@@ -25,7 +25,9 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.util.SparseIntArray;
 import android.util.TypedValue;
@@ -130,6 +132,8 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private ScriptRuntime scriptRuntime;
     private EditText scriptEditor;
     private TextView scriptLog;
+    private LinearLayout docList;
+    private List<ScriptDocs.Entry> docEntries;
 
     /** Android pointer id -> firmware touch slot (0..7). */
     private final SparseIntArray touchSlots = new SparseIntArray();
@@ -1065,53 +1069,136 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     }
 
     private void showScriptHelp() {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(L.t("脚本帮助"))
-                .setMessage(scriptHelpText())
-                .setPositiveButton(L.t("知道了"), null)
-                .show();
+        docEntries = ScriptDocs.forLanguage(L.code());
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+
+        EditText search = new EditText(this);
+        search.setSingleLine(true);
+        search.setHint(L.t("搜索函数"));
+        search.setTextSize(16);
+        search.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        search.setPadding(dp(8), dp(8), dp(8), dp(12));
+        search.setTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurface));
+        search.setHintTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurfaceVariant));
+        content.addView(search, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        docList = new LinearLayout(this);
+        docList.setOrientation(LinearLayout.VERTICAL);
+        content.addView(docList, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        renderDocList("");
+        search.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start,
+                                                     int count, int after) { }
+
+            @Override public void onTextChanged(CharSequence s, int start,
+                                                 int before, int count) {
+                renderDocList(s == null ? "" : s.toString());
+            }
+
+            @Override public void afterTextChanged(Editable s) { }
+        });
+        pushPage(buildPage(L.t("文档"), content, this::popPage));
     }
 
-    private String scriptHelpText() {
-        String zh = "脚本可以直接控制固件按键和触摸。\n\n"
-                + "await prime.press(\"1\");\n"
-                + "await prime.key(\"shift\", true);\n"
-                + "await prime.key(\"shift\", false);\n\n"
-                + "await prime.touchTap(0, 160, 120);\n"
-                + "prime.touchDown(0, 10, 10);\n"
-                + "prime.touchMove(0, 160, 120);\n"
-                + "prime.touchUp(0, 160, 120);\n\n"
-                + "prime.sleep(500);\n"
-                + "prime.log(\"done\");\n\n"
-                + "触摸坐标：x 0..319，y 0..239。\n"
-                + "常用键名：enter、shift、alpha、sin、home、esc。";
-        String en = "Scripts control firmware keys and touch.\n\n"
-                + "await prime.press(\"1\");\n"
-                + "await prime.key(\"shift\", true);\n"
-                + "await prime.key(\"shift\", false);\n\n"
-                + "await prime.touchTap(0, 160, 120);\n"
-                + "prime.touchDown(0, 10, 10);\n"
-                + "prime.touchMove(0, 160, 120);\n"
-                + "prime.touchUp(0, 160, 120);\n\n"
-                + "prime.sleep(500);\n"
-                + "prime.log(\"done\");\n\n"
-                + "Touch: x 0..319, y 0..239.\n"
-                + "Key names: enter, shift, alpha, sin, home, esc.";
-        String fr = "Les scripts contrôlent les touches et le tactile du firmware.\n\n"
-                + "await prime.press(\"1\");\n"
-                + "await prime.key(\"shift\", true);\n"
-                + "await prime.key(\"shift\", false);\n\n"
-                + "await prime.touchTap(0, 160, 120);\n"
-                + "prime.touchDown(0, 10, 10);\n"
-                + "prime.touchMove(0, 160, 120);\n"
-                + "prime.touchUp(0, 160, 120);\n\n"
-                + "prime.sleep(500);\n"
-                + "prime.log(\"done\");\n\n"
-                + "Tactile : x 0..319, y 0..239.\n"
-                + "Noms de touches : enter, shift, alpha, sin, home, esc.";
-        if ("en".equals(L.code())) return en;
-        if ("fr".equals(L.code())) return fr;
-        return zh;
+    private void renderDocList(String query) {
+        if (docList == null || docEntries == null) return;
+        final String needle = query == null ? "" : query.trim().toLowerCase(Locale.US);
+        docList.removeAllViews();
+        int shown = 0;
+        for (ScriptDocs.Entry entry : docEntries) {
+            String haystack = (entry.name + " " + entry.signature + " "
+                    + entry.description + " " + entry.parameters).toLowerCase(Locale.US);
+            if (!needle.isEmpty() && !haystack.contains(needle)) continue;
+            TextView row = new TextView(this);
+            row.setText(entry.name);
+            row.setTypeface(Typeface.MONOSPACE);
+            row.setTextSize(16);
+            row.setTextColor(themeColor(
+                    com.google.android.material.R.attr.colorOnSurface));
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(8), dp(16), dp(8), dp(16));
+            row.setBackground(ripple());
+            row.setOnClickListener(v -> showDocDetail(entry));
+            docList.addView(row, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+            docList.addView(divider());
+            ++shown;
+        }
+        if (shown == 0) {
+            TextView empty = new TextView(this);
+            empty.setText(L.t("没有匹配的函数"));
+            empty.setTextColor(themeColor(
+                    com.google.android.material.R.attr.colorOnSurfaceVariant));
+            empty.setPadding(dp(8), dp(24), dp(8), dp(24));
+            docList.addView(empty);
+        }
+    }
+
+    private void showDocDetail(ScriptDocs.Entry entry) {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+
+        content.addView(docBody(entry.description), new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        content.addView(sectionCaption(L.t("签名")));
+        content.addView(docCodeBlock(entry.signature), cardParams());
+        if (entry.parameters != null && !entry.parameters.isEmpty()) {
+            content.addView(sectionCaption(L.t("参数")));
+            content.addView(docBody(entry.parameters), new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        }
+        if (entry.returns != null && !entry.returns.isEmpty()) {
+            content.addView(sectionCaption(L.t("返回值")));
+            content.addView(docBody(entry.returns), new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+        }
+        content.addView(sectionCaption(L.t("示例")));
+        content.addView(docCodeBlock(entry.example), cardParams());
+
+        pushPage(buildPage(entry.name, content, this::popPage));
+    }
+
+    private TextView docBody(String text) {
+        TextView body = new TextView(this);
+        body.setText(text);
+        applyTextAppearance(body,
+                com.google.android.material.R.attr.textAppearanceBodyMedium);
+        body.setTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurface));
+        body.setLineSpacing(dp(3), 1f);
+        body.setPadding(dp(4), 0, dp(4), dp(4));
+        body.setTextIsSelectable(true);
+        return body;
+    }
+
+    private MaterialCardView docCodeBlock(String code) {
+        MaterialCardView card = filledCard();
+        TextView view = new TextView(this);
+        view.setText(code);
+        view.setTypeface(Typeface.MONOSPACE);
+        view.setTextSize(13);
+        view.setTextColor(themeColor(
+                com.google.android.material.R.attr.colorOnSurface));
+        view.setLineSpacing(dp(2), 1f);
+        view.setPadding(dp(16), dp(14), dp(16), dp(14));
+        view.setTextIsSelectable(true);
+        card.addView(view, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT));
+        return card;
     }
 
     private void runScript() {
