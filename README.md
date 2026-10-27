@@ -2,8 +2,7 @@
 
 **中文** | [English](#english)
 
-HP Prime 固件的 Android 兼容层。PrimeShim 不模拟 CPU，而是把原厂 ARM ELF
-直接作为 32 位原生进程运行，并在运行时把 BESTA 系统调用和硬件访问接到
+HP Prime 固件的 Android 兼容层。PrimeShim 不模拟 CPU，而是把原厂 ARM ELF 直接作为 32 位原生进程运行，并在运行时把 BESTA 系统调用和硬件访问接到
 Android/Linux 实现上。
 
 > 本项目不附带任何 HP 固件，请使用你合法拥有的固件。
@@ -54,7 +53,7 @@ adb install -r app-debug.apk
 `PRIME_MASTER.DAT` 和 `PRIME_OS.ROM` 不需要导入，应用会识别并忽略。
 
 官方升级包不包含用户 C: 盘。需要恢复用户程序和数据时，请在
-“备份 → 备份 DATA”中导入 C:\DATA 的 zip。
+“备份 - 备份 DATA”中导入 C:\DATA 的 zip。
 
 ### 构建
 
@@ -65,17 +64,12 @@ gradle :app:assembleDebug
 
 或使用 Android Studio 打开 `android/`。
 
-仓库不包含签名私钥；公开构建使用 Android 默认 debug 签名。
+公开构建使用 Android 默认 debug 签名。
 
-### 操作
+### 已知问题
 
-- 点按计算器屏幕：单点触摸
-- 双指：固件支持的多点手势
-- 长按左上角菜单按钮：拖动位置
-- 点按菜单按钮：打开菜单
-- 设置标题右侧的太阳/月亮图标：切换亮暗主题
-- 设置 → 语言：中文 / English / Français
-- 设置 → 外观：主题和字体大小
+- 未测试 20250915 以下的固件，不保证可用性。
+- 不能执行后门程序。
 
 ### 致谢
 
@@ -83,7 +77,9 @@ gradle :app:assembleDebug
 - [telecomadm1145/PrimeU2](https://github.com/telecomadm1145/PrimeU2)：BESTA/HLE 参考实现
 - Material Components for Android
 
-本项目不包含 HP 的固件、字体数据库或 A:/C: 数据；这些内容由用户自行导入。
+本项目不包含 HP 的固件。这些内容由用户自行导入。
+
+欢迎提交 issues 和 pull request。
 
 ---
 
