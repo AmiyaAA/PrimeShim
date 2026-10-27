@@ -130,8 +130,11 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     private CrosshairView crosshair;
     private FrameLayout root;
     private ScriptRuntime scriptRuntime;
-    private EditText scriptEditor;
-    private TextView scriptLog;
+    private CodeEditorView scriptEditor;
+    private TextView terminalText;
+    private ScrollView terminalScroll;
+    private LinearLayout terminalPage;
+    private final StringBuilder terminalBuffer = new StringBuilder();
     private LinearLayout docList;
     private List<ScriptDocs.Entry> docEntries;
 
@@ -607,6 +610,20 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         return bar;
     }
 
+    private ImageView iconButton(int icon, String description, Runnable action) {
+        ImageView button = new ImageView(this);
+        button.setImageResource(icon);
+        button.setImageTintList(ColorStateList.valueOf(themeColor(
+                com.google.android.material.R.attr.colorOnSurfaceVariant)));
+        button.setContentDescription(description);
+        button.setBackground(ripple());
+        button.setPadding(dp(9), dp(9), dp(9), dp(9));
+        button.setClickable(true);
+        button.setFocusable(true);
+        button.setOnClickListener(v -> action.run());
+        return button;
+    }
+
     private MaterialDivider divider() {
         MaterialDivider divider = new MaterialDivider(this);
         divider.setDividerInsetStart(dp(16));
@@ -1018,54 +1035,30 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         content.setOrientation(LinearLayout.VERTICAL);
 
         MaterialCardView editorCard = filledCard();
-        scriptEditor = new EditText(this);
+        scriptEditor = new CodeEditorView(this);
+        scriptEditor.setDark(isDarkTheme());
         scriptEditor.setText(settings().getString("script", SCRIPT_SAMPLE));
-        scriptEditor.setTextSize(13);
-        scriptEditor.setTypeface(Typeface.MONOSPACE);
-        scriptEditor.setTextColor(themeColor(
-                com.google.android.material.R.attr.colorOnSurface));
-        scriptEditor.setHintTextColor(themeColor(
-                com.google.android.material.R.attr.colorOnSurfaceVariant));
         scriptEditor.setHint(L.t("在此输入 JavaScript"));
-        scriptEditor.setGravity(Gravity.TOP | Gravity.START);
-        scriptEditor.setPadding(dp(16), dp(16), dp(16), dp(16));
-        scriptEditor.setInputType(InputType.TYPE_CLASS_TEXT
-                | InputType.TYPE_TEXT_FLAG_MULTI_LINE
-                | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-        scriptEditor.setHorizontallyScrolling(false);
-        scriptEditor.setMinLines(12);
         editorCard.addView(scriptEditor, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, dp(340)));
-        content.addView(editorCard, cardParams());
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+        content.addView(editorCard, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        content.addView(buttonRow(dp(8),
-                filledButton(L.t("运行"), v -> runScript()),
-                tonalButton(L.t("停止"), v -> stopScript())));
-
-        content.addView(buttonRow(dp(4),
-                tonalButton(L.t("导入"), v -> pickScript()),
-                textButton(L.t("示例"), v -> {
+        View[] actions = {
+                iconButton(R.drawable.ic_play, L.t("运行"), this::runScript),
+                iconButton(R.drawable.ic_stop, L.t("停止"), this::stopScript),
+                iconButton(R.drawable.ic_file_upload, L.t("导入"), this::pickScript),
+                iconButton(R.drawable.ic_code, L.t("示例"), () -> {
                     scriptEditor.setText(SCRIPT_SAMPLE);
                     saveScript();
                 }),
-                textButton(L.t("帮助"), v -> showScriptHelp())));
-
-        scriptLog = new TextView(this);
-        scriptLog.setTextSize(12);
-        scriptLog.setTypeface(Typeface.MONOSPACE);
-        scriptLog.setTextColor(themeColor(
-                com.google.android.material.R.attr.colorOnSurfaceVariant));
-        scriptLog.setPadding(dp(16), dp(12), dp(16), dp(12));
-        scriptLog.setTextIsSelectable(true);
-        MaterialCardView logCard = filledCard();
-        logCard.addView(scriptLog, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, dp(150)));
-        content.addView(logCard, cardParams());
-
-        pushPage(buildPage(L.t("脚本"), content, () -> {
+                iconButton(R.drawable.ic_info, L.t("帮助"), this::showScriptHelp)
+        };
+        pushPage(buildFixedPage(L.t("脚本"), content, () -> {
             saveScript();
             popPage();
-        }));
+        }, actions));
     }
 
     private void showScriptHelp() {
@@ -1209,13 +1202,84 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
             return;
         }
         saveScript();
-        if (scriptLog != null) scriptLog.setText("");
+        showScriptTerminal();
+        appendTerminal("> " + L.t("脚本开始"));
         scriptRuntime.run(source);
     }
 
     private void stopScript() {
         if (scriptRuntime != null) scriptRuntime.stop();
-        snack(L.t("已停止"));
+        appendTerminal(L.t("已停止"));
+    }
+
+    private void showScriptTerminal() {
+        terminalBuffer.setLength(0);
+        terminalPage = new LinearLayout(this);
+        terminalPage.setOrientation(LinearLayout.VERTICAL);
+        terminalPage.setBackgroundColor(0xFF0D1117);
+        terminalPage.setClickable(true);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(4), 0, dp(4), 0);
+
+        ImageView back = iconButton(R.drawable.ic_arrow_back, L.t("返回"),
+                () -> {
+                    stopScript();
+                    popPage();
+                });
+        back.setImageTintList(ColorStateList.valueOf(0xFFE6EDF3));
+        header.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
+
+        TextView title = new TextView(this);
+        title.setText(L.t("终端"));
+        title.setTextSize(18);
+        title.setTypeface(Typeface.MONOSPACE);
+        title.setTextColor(0xFFE6EDF3);
+        title.setPadding(dp(8), 0, dp(8), 0);
+        header.addView(title, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        ImageView stop = iconButton(R.drawable.ic_stop, L.t("停止"), this::stopScript);
+        stop.setImageTintList(ColorStateList.valueOf(0xFFFF7B72));
+        header.addView(stop, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        terminalPage.addView(header, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(64)));
+
+        terminalScroll = new ScrollView(this);
+        terminalScroll.setFillViewport(true);
+        terminalScroll.setBackgroundColor(0xFF0D1117);
+        terminalText = new TextView(this);
+        terminalText.setTypeface(Typeface.MONOSPACE);
+        terminalText.setTextSize(12);
+        terminalText.setTextColor(0xFFC9D1D9);
+        terminalText.setPadding(dp(16), dp(12), dp(16), dp(16));
+        terminalText.setLineSpacing(dp(2), 1f);
+        terminalText.setTextIsSelectable(true);
+        terminalScroll.addView(terminalText, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT));
+        terminalPage.addView(terminalScroll, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        padForCutout(terminalPage);
+        pushPage(terminalPage);
+    }
+
+    private void appendTerminal(String line) {
+        if (line == null) return;
+        if (terminalBuffer.length() > 0) terminalBuffer.append('\n');
+        terminalBuffer.append(line);
+        if (terminalBuffer.length() > 200000) {
+            terminalBuffer.delete(0, terminalBuffer.length() - 160000);
+        }
+        if (terminalText != null) {
+            terminalText.setText(terminalBuffer);
+            if (terminalScroll != null) {
+                terminalScroll.post(() -> terminalScroll.fullScroll(View.FOCUS_DOWN));
+            }
+        }
     }
 
     private void saveScript() {
@@ -1273,10 +1337,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     }
 
     private void scriptLogLine(String line) {
-        if (scriptLog == null) return;
-        String text = scriptLog.getText().toString();
-        if (text.length() > 12000) text = text.substring(text.length() - 8000);
-        scriptLog.setText(text + (text.isEmpty() ? "" : "\n") + line);
+        appendTerminal(line);
     }
 
     private String pathLabel(File file) {
@@ -1988,11 +2049,22 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     }
 
     private LinearLayout buildPage(String title, View content, Runnable onBack) {
-        return buildPage(title, content, onBack, false);
+        return buildPage(title, content, onBack, false, true);
     }
 
     private LinearLayout buildPage(String title, View content, Runnable onBack,
                                    boolean themeToggle) {
+        return buildPage(title, content, onBack, themeToggle, true);
+    }
+
+    private LinearLayout buildFixedPage(String title, View content, Runnable onBack,
+                                        View... actions) {
+        return buildPage(title, content, onBack, false, false, actions);
+    }
+
+    private LinearLayout buildPage(String title, View content, Runnable onBack,
+                                   boolean themeToggle, boolean scrollable,
+                                   View... actions) {
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
         page.setMinimumWidth(getResources().getDisplayMetrics().widthPixels);
@@ -2019,7 +2091,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 com.google.android.material.R.attr.textAppearanceHeadlineMedium);
         titleView.setTextColor(themeColor(
                 com.google.android.material.R.attr.colorOnSurface));
-        titleView.setPadding(dp(16), dp(4), dp(16), dp(16));
+        titleView.setPadding(dp(16), dp(4), dp(12), dp(16));
         titleRow.addView(titleView, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -2040,18 +2112,36 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
             iconParams.rightMargin = dp(12);
             titleRow.addView(themeIcon, iconParams);
         }
+        if (actions != null) {
+            for (View action : actions) {
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        dp(40), dp(40));
+                params.rightMargin = dp(2);
+                titleRow.addView(action, params);
+            }
+        }
         page.addView(titleRow, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        ScrollView scroll = new ScrollView(this);
-        scroll.setClipToPadding(false);
-        scroll.setPadding(dp(16), 0, dp(16), dp(16));
-        scroll.addView(content, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT));
-        page.addView(scroll, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        if (scrollable) {
+            ScrollView scroll = new ScrollView(this);
+            scroll.setClipToPadding(false);
+            scroll.setPadding(dp(16), 0, dp(16), dp(16));
+            scroll.addView(content, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT));
+            page.addView(scroll, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        } else {
+            FrameLayout body = new FrameLayout(this);
+            body.setPadding(dp(16), 0, dp(16), dp(16));
+            body.addView(content, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT));
+            page.addView(body, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        }
 
         padForCutout(page);
         return page;
@@ -3714,6 +3804,9 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
     @Override
     public void onBackPressed() {
         if (!pageStack.isEmpty()) {
+            if (pageStack.get(pageStack.size() - 1) == terminalPage) {
+                stopScript();
+            }
             if (scriptEditor != null) saveScript();
             popPage();
             return;

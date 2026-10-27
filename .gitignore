@@ -20,3 +20,5 @@ runtime/prime_data/
 # signing material is not public
 android/keystore/
 android/keystore.properties
+
+apk-*/

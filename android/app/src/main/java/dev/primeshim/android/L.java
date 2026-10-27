@@ -29,6 +29,8 @@ public final class L {
         EN.put("运行", "Run");
         EN.put("示例", "Example");
         EN.put("帮助", "Help");
+        EN.put("终端", "Terminal");
+        EN.put("脚本开始", "Script started");
         EN.put("脚本帮助", "Script help");
         EN.put("文档", "Documentation");
         EN.put("搜索函数", "Search functions");
@@ -205,6 +207,8 @@ public final class L {
         FR.put("运行", "Exécuter");
         FR.put("示例", "Exemple");
         FR.put("帮助", "Aide");
+        FR.put("终端", "Terminal");
+        FR.put("脚本开始", "Script démarré");
         FR.put("脚本帮助", "Aide du script");
         FR.put("文档", "Documentation");
         FR.put("搜索函数", "Rechercher une fonction");
