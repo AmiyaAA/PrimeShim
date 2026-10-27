@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Material 3 (Material You) theme.
+
+      The colour roles, type scale and shape scale all come from
+      com.google.android.material:material:1.12.0.  On Android 12+ the palette
+      is replaced by the wallpaper-derived dynamic scheme in PrimeShimApp
+      (DynamicColors.applyToActivitiesIfAvailable), which is what makes the app
+      follow the system accent like every other Material You app.
+    -->
+    <style name="Theme.PrimeShim" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <!-- Attribute -> official widget style.  The activity builds its
+             views in code, so it asks the theme for a filled card instead of
+             hand-picking a background colour and corner radius. -->
+        <item name="primeCardFilledStyle">@style/Widget.PrimeShim.Card.Filled</item>
+    </style>
+
+    <style name="Widget.PrimeShim.Card.Filled"
+        parent="Widget.Material3.CardView.Filled" />
+
+</resources>

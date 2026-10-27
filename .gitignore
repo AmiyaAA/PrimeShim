@@ -1,0 +1,22 @@
+/build/
+__pycache__/
+*.py[cod]
+*.log
+core
+core.*
+*.elf.map
+
+# Android port
+android/.gradle/
+android/local.properties
+android/app/build/
+android/app/src/main/assets/armfir.elf
+android/app/src/main/assets/prime_data/
+
+# Proprietary HP firmware: never publish
+firmware/
+runtime/prime_data/
+
+# signing material is not public
+android/keystore/
+android/keystore.properties

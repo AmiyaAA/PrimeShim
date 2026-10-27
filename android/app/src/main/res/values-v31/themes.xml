@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Android 12+ splash screen API.  Keeping the splash on colorSurface with
+      the themed launcher icon is the Material You launch treatment; the
+      in-app SplashView then plays the PrimeShim logo animation.
+    -->
+    <style name="Theme.PrimeShim" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+
+        <item name="android:windowSplashScreenBackground">?attr/colorSurface</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_letters</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+
+        <item name="primeCardFilledStyle">@style/Widget.PrimeShim.Card.Filled</item>
+    </style>
+
+</resources>

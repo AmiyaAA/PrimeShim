@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Material 3 icon button (40dp container in a 48dp target).  The base style is
+  the library's Widget.Material3.Button.IconButton; the two colour roles are the
+  ones the library uses for the filled tonal variant (secondaryContainer).
+-->
+<com.google.android.material.button.MaterialButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Material3.Button.IconButton"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:contentDescription="菜单"
+    app:backgroundTint="?attr/colorSecondaryContainer"
+    app:iconTint="?attr/colorOnSecondaryContainer" />

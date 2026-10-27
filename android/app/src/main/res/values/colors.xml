@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher icon is the nb mark from nb.svg without its circular
+         border: the background is white and the middle nb is the brand blue.
+         The UI takes every other colour from the Material 3 scheme. -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_logo">#479FCD</color>
+</resources>
