@@ -6,7 +6,7 @@ HP Prime 固件的 Android 兼容层。PrimeShim 不模拟 CPU，而是把原厂
 直接作为 32 位原生进程运行，并在运行时把 BESTA 系统调用和硬件访问接到
 Android/Linux 实现上。
 
-> 本项目不附带任何 HP 固件或 A:/C: 数据。请使用你合法拥有的固件。
+> 本项目不附带任何 HP 固件，请使用你合法拥有的固件。
 
 ---
 
@@ -22,7 +22,7 @@ Android/Linux 实现上。
 - 自动从 `PRIME_APP.DAT[0x2000:]` 解析 FAT16 A: 盘，保留 VFAT 长文件名大小写
 - 自动生成 `A:\dummy.DAT` 字体/帮助数据库
 - 每个固件 ELF 使用独立 profile，A: 盘始终随固件重建，C: 用户数据保留
-- 支持 HP Prime 2.4.2 与 0915 固件
+- 支持 HP Prime 20260909 与 20250915 固件
 - 320×240 LCD、触摸、多点触控、屏幕键盘
 - 中文 / English / Français
 - 亮色 / 暗色 / 跟随系统主题
@@ -32,9 +32,8 @@ Android/Linux 实现上。
 
 ### 设备要求
 
-- Android 8.0 或更高
-- **必须支持 32 位 ARM ABI `armeabi-v7a`**
-- 仅 64 位 ARM 的设备无法运行
+- Android 8.0+
+- **必须支持 32 位 ARM ABI `armeabi-v7a`**，仅 64 位 ARM 的设备无法运行
 
 ### 安装
 
