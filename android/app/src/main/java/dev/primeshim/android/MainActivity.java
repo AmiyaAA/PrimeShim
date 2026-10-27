@@ -1013,17 +1013,6 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
 
-        TextView intro = new TextView(this);
-        intro.setText(L.t("JavaScript 脚本控制模拟器。可用 prime.press、prime.key、prime.touchDown/move/up、prime.touchTap、prime.sleep、prime.log。"));
-        applyTextAppearance(intro,
-                com.google.android.material.R.attr.textAppearanceBodyMedium);
-        intro.setTextColor(themeColor(
-                com.google.android.material.R.attr.colorOnSurfaceVariant));
-        intro.setPadding(dp(4), 0, dp(4), dp(12));
-        content.addView(intro, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-
         MaterialCardView editorCard = filledCard();
         scriptEditor = new EditText(this);
         scriptEditor.setText(settings().getString("script", SCRIPT_SAMPLE));
@@ -1054,7 +1043,8 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 textButton(L.t("示例"), v -> {
                     scriptEditor.setText(SCRIPT_SAMPLE);
                     saveScript();
-                })));
+                }),
+                textButton(L.t("帮助"), v -> showScriptHelp())));
 
         scriptLog = new TextView(this);
         scriptLog.setTextSize(12);
@@ -1072,6 +1062,56 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
             saveScript();
             popPage();
         }));
+    }
+
+    private void showScriptHelp() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(L.t("脚本帮助"))
+                .setMessage(scriptHelpText())
+                .setPositiveButton(L.t("知道了"), null)
+                .show();
+    }
+
+    private String scriptHelpText() {
+        String zh = "脚本可以直接控制固件按键和触摸。\n\n"
+                + "await prime.press(\"1\");\n"
+                + "await prime.key(\"shift\", true);\n"
+                + "await prime.key(\"shift\", false);\n\n"
+                + "await prime.touchTap(0, 160, 120);\n"
+                + "prime.touchDown(0, 10, 10);\n"
+                + "prime.touchMove(0, 160, 120);\n"
+                + "prime.touchUp(0, 160, 120);\n\n"
+                + "prime.sleep(500);\n"
+                + "prime.log(\"done\");\n\n"
+                + "触摸坐标：x 0..319，y 0..239。\n"
+                + "常用键名：enter、shift、alpha、sin、home、esc。";
+        String en = "Scripts control firmware keys and touch.\n\n"
+                + "await prime.press(\"1\");\n"
+                + "await prime.key(\"shift\", true);\n"
+                + "await prime.key(\"shift\", false);\n\n"
+                + "await prime.touchTap(0, 160, 120);\n"
+                + "prime.touchDown(0, 10, 10);\n"
+                + "prime.touchMove(0, 160, 120);\n"
+                + "prime.touchUp(0, 160, 120);\n\n"
+                + "prime.sleep(500);\n"
+                + "prime.log(\"done\");\n\n"
+                + "Touch: x 0..319, y 0..239.\n"
+                + "Key names: enter, shift, alpha, sin, home, esc.";
+        String fr = "Les scripts contrôlent les touches et le tactile du firmware.\n\n"
+                + "await prime.press(\"1\");\n"
+                + "await prime.key(\"shift\", true);\n"
+                + "await prime.key(\"shift\", false);\n\n"
+                + "await prime.touchTap(0, 160, 120);\n"
+                + "prime.touchDown(0, 10, 10);\n"
+                + "prime.touchMove(0, 160, 120);\n"
+                + "prime.touchUp(0, 160, 120);\n\n"
+                + "prime.sleep(500);\n"
+                + "prime.log(\"done\");\n\n"
+                + "Tactile : x 0..319, y 0..239.\n"
+                + "Noms de touches : enter, shift, alpha, sin, home, esc.";
+        if ("en".equals(L.code())) return en;
+        if ("fr".equals(L.code())) return fr;
+        return zh;
     }
 
     private void runScript() {
@@ -1601,7 +1641,7 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
             general.addView(settingsRowView(L.t("外观"), L.t("主题与字体大小"),
                     () -> showSettingsPage(3)).view);
             general.addView(divider());
-            general.addView(settingsRowView(L.t("调试"), L.t("追踪、码表扫描与日志"),
+            general.addView(settingsRowView(L.t("调试"), L.t("追踪与日志"),
                     () -> showSettingsPage(2)).view);
             box.addView(generalCard, cardParams());
 
@@ -1724,12 +1764,6 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 }
             });
             debug.addView(overlayRow.view);
-            debug.addView(divider());
-            debug.addView(settingsRowView(L.t("扫描码表 0x20–0x3F"),
-                    L.t("把固件的键码表打印到输入行"), () -> {
-                        popPage();
-                        runCodeSweep();
-                    }).view);
             debug.addView(divider());
             debug.addView(settingsRowView(L.t("日志面板"), L.t("查看原生输出"), () -> {
                 popPage();
@@ -2592,81 +2626,6 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         }
     }
 
-
-    /** Per-code sweep: sends each code, keeps only the freshly drawn patch and
-     *  lays the patches out one row per code, so the sheet reads as a key table. */
-    private void runCodeSweep() {
-        toggleLog();
-        setStatus(L.t("扫描 0x20~0x3F，逐码差分，请勿触碰"), false);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try { Thread.sleep(700); } catch (InterruptedException ignored) { }
-                java.util.ArrayList<String> labels = new java.util.ArrayList<>();
-                java.util.ArrayList<Bitmap> patches = new java.util.ArrayList<>();
-                for (int code = 0x20; code <= 0x3F; ++code) {
-                    int[] before = PrimeShim.nativeSnapshot();
-                    PrimeShim.nativeKeyBatch(code, 1);
-                    try { Thread.sleep(80); } catch (InterruptedException ignored) { }
-                    PrimeShim.nativeKeyBatch(code, 0);
-                    try { Thread.sleep(260); } catch (InterruptedException ignored) { }
-                    int[] after = PrimeShim.nativeSnapshot();
-                    labels.add(String.format("0x%02X", code));
-                    if (before == null || after == null) { patches.add(null); continue; }
-                    int minX = 320, maxX = -1, minY = 240, maxY = -1;
-                    for (int y = 24; y < 200; ++y) {
-                        for (int x = 0; x < 320; ++x) {
-                            int p = y * 320 + x;
-                            if (before[p] != after[p]) {
-                                if (x < minX) minX = x;
-                                if (x > maxX) maxX = x;
-                                if (y < minY) minY = y;
-                                if (y > maxY) maxY = y;
-                            }
-                        }
-                    }
-                    if (maxX < minX || maxY < minY) { patches.add(null); continue; }
-                    int w = maxX - minX + 1, h = maxY - minY + 1;
-                    if (w > 260 || h > 60) { patches.add(null); continue; }  /* whole screen redrawn */
-                    Bitmap crop = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-                    int[] pixels = new int[w * h];
-                    for (int y = 0; y < h; ++y) {
-                        System.arraycopy(after, (minY + y) * 320 + minX, pixels, y * w, w);
-                    }
-                    crop.setPixels(pixels, 0, w, 0, 0, w, h);
-                    patches.add(crop);
-                }
-                saveBitmap(buildCodeSheet(labels, patches), "codesweep-" + BuildConfig.BUILD_STAMP + ".png");
-                setStatus(null, false);
-            }
-        }, "primeshim-sweep").start();
-    }
-
-    private Bitmap buildCodeSheet(java.util.List<String> labels, java.util.List<Bitmap> patches) {
-        int rowHeight = 32, width = 300;
-        Bitmap sheet = Bitmap.createBitmap(width, Math.max(1, labels.size() * rowHeight), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(sheet);
-        canvas.drawColor(Color.WHITE);
-        Paint text = new Paint();
-        text.setColor(Color.BLACK);
-        text.setTextSize(15f);
-        Paint line = new Paint();
-        line.setColor(0xFFBBBBBB);
-        for (int i = 0; i < labels.size(); ++i) {
-            int top = i * rowHeight;
-            canvas.drawText(labels.get(i), 4, top + 21, text);
-            Bitmap patch = patches.get(i);
-            if (patch == null) {
-                canvas.drawText("(none)", 90, top + 21, text);
-            } else {
-                Rect dst = new Rect(90, top + 2, 90 + Math.min(200, patch.getWidth() * 2),
-                        top + 2 + Math.min(28, patch.getHeight() * 2));
-                canvas.drawBitmap(patch, null, dst, null);
-            }
-            canvas.drawLine(0, top + rowHeight - 1, width, top + rowHeight - 1, line);
-        }
-        return sheet;
-    }
 
     private void copyLog() {
         CharSequence text = logText.getText();

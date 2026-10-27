@@ -28,7 +28,8 @@ public final class L {
         EN.put("脚本", "Script");
         EN.put("运行", "Run");
         EN.put("示例", "Example");
-        EN.put("JavaScript 脚本控制模拟器。可用 prime.press、prime.key、prime.touchDown/move/up、prime.touchTap、prime.sleep、prime.log。", "JavaScript controls the emulator. Use prime.press, prime.key, prime.touchDown/move/up, prime.touchTap, prime.sleep and prime.log.");
+        EN.put("帮助", "Help");
+        EN.put("脚本帮助", "Script help");
         EN.put("在此输入 JavaScript", "Write JavaScript here");
         EN.put("脚本日志", "Script log");
         EN.put("脚本为空", "The script is empty");
@@ -71,7 +72,7 @@ public final class L {
         EN.put("通用", "General");
         EN.put("当前 ", "Current ");
         EN.put("调试", "Debug");
-        EN.put("追踪、码表扫描与日志", "Tracing, code sweep and logs");
+        EN.put("追踪与日志", "Tracing and logs");
         EN.put("数据", "Data");
         EN.put("导入官方升级包 zip 或 PRIME_APP.DAT", "Import official update zip or PRIME_APP.DAT");
         EN.put("浏览 A: 与 C:，导入导出单个文件", "Browse A: and C:, import or export a single file");
@@ -85,8 +86,6 @@ public final class L {
         EN.put("开始追踪", "Tracing started");
         EN.put("键盘调试", "Keyboard debug");
         EN.put("红框与键位点位已显示", "Red frame and key dots shown");
-        EN.put("扫描码表 0x20–0x3F", "Scan code table 0x20–0x3F");
-        EN.put("把固件的键码表打印到输入行", "Print the firmware key table to the input line");
         EN.put("日志面板", "Log panel");
         EN.put("查看原生输出", "View native output");
         EN.put("HP Prime 模拟器", "HP Prime emulator");
@@ -127,7 +126,6 @@ public final class L {
         EN.put("日志为空", "Log is empty");
         EN.put("已保存到 Download/PrimeShim/", "Saved to Download/PrimeShim/");
         EN.put("校准中：先确认画面停在有输入行的界面，例如函数应用", "Calibrating: first show an input-line screen such as Function");
-        EN.put("扫描 0x20~0x3F，逐码差分，请勿触碰", "Scanning 0x20~0x3F, differential per code; do not touch");
         EN.put("没有可复制的日志", "No log to copy");
         EN.put("已复制 ", "Copied ");
         EN.put(" 字符", " chars");
@@ -199,7 +197,8 @@ public final class L {
         FR.put("脚本", "Script");
         FR.put("运行", "Exécuter");
         FR.put("示例", "Exemple");
-        FR.put("JavaScript 脚本控制模拟器。可用 prime.press、prime.key、prime.touchDown/move/up、prime.touchTap、prime.sleep、prime.log。", "JavaScript contrôle l'émulateur. Utilisez prime.press, prime.key, prime.touchDown/move/up, prime.touchTap, prime.sleep et prime.log.");
+        FR.put("帮助", "Aide");
+        FR.put("脚本帮助", "Aide du script");
         FR.put("在此输入 JavaScript", "Écrivez le JavaScript ici");
         FR.put("脚本日志", "Journal du script");
         FR.put("脚本为空", "Le script est vide");
@@ -242,7 +241,7 @@ public final class L {
         FR.put("通用", "Général");
         FR.put("当前 ", "Actuel ");
         FR.put("调试", "Débogage");
-        FR.put("追踪、码表扫描与日志", "Traçage, balayage des codes et journaux");
+        FR.put("追踪与日志", "Traçage et journaux");
         FR.put("数据", "Données");
         FR.put("导入官方升级包 zip 或 PRIME_APP.DAT", "Importer le zip officiel ou PRIME_APP.DAT");
         FR.put("浏览 A: 与 C:，导入导出单个文件", "Parcourir A: et C:, importer ou exporter un fichier");
@@ -256,8 +255,6 @@ public final class L {
         FR.put("开始追踪", "Traçage démarré");
         FR.put("键盘调试", "Débogage du clavier");
         FR.put("红框与键位点位已显示", "Cadre rouge et points affichés");
-        FR.put("扫描码表 0x20–0x3F", "Table des codes 0x20–0x3F");
-        FR.put("把固件的键码表打印到输入行", "Afficher la table des touches dans la ligne de saisie");
         FR.put("日志面板", "Panneau du journal");
         FR.put("查看原生输出", "Voir la sortie native");
         FR.put("HP Prime 模拟器", "Émulateur HP Prime");
@@ -298,7 +295,6 @@ public final class L {
         FR.put("日志为空", "Journal vide");
         FR.put("已保存到 Download/PrimeShim/", "Enregistré dans Téléchargements/PrimeShim/");
         FR.put("校准中：先确认画面停在有输入行的界面，例如函数应用", "Étalonnage : affichez d’abord un écran avec ligne de saisie, par exemple Function");
-        FR.put("扫描 0x20~0x3F，逐码差分，请勿触碰", "Balayage 0x20~0x3F, différentiel par code ; ne touchez pas");
         FR.put("没有可复制的日志", "Aucun journal à copier");
         FR.put("已复制 ", "Copié ");
         FR.put(" 字符", " caractères");
