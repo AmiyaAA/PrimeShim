@@ -374,7 +374,6 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         menuParams.topMargin = initialTopMargin;
         menuParams.leftMargin = settings().getInt("menuX", dp(8));
         root.addView(menuButton, menuParams);
-        offsetForCutout(menuButton, dp(8));
         root.post(this::clampMenuPosition);
         menuButton.setOnClickListener(view -> {
             menuIcon.animateTo(1f);
