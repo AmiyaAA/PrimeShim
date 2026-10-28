@@ -365,11 +365,16 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         menuButton.addView(menuIcon, new FrameLayout.LayoutParams(
                 dp(24), dp(24), Gravity.CENTER));
 
+        int minInitialTop = getStatusBarInset() + dp(8);
+        int savedY = settings().getInt("menuY", -1);
+        int initialTopMargin = savedY >= minInitialTop ? savedY : minInitialTop;
+
         FrameLayout.LayoutParams menuParams = new FrameLayout.LayoutParams(
                 dp(40), dp(40), Gravity.TOP | Gravity.START);
-        menuParams.topMargin = settings().getInt("menuY", dp(8));
+        menuParams.topMargin = initialTopMargin;
         menuParams.leftMargin = settings().getInt("menuX", dp(8));
         root.addView(menuButton, menuParams);
+        offsetForCutout(menuButton, dp(8));
         root.post(this::clampMenuPosition);
         menuButton.setOnClickListener(view -> {
             menuIcon.animateTo(1f);
@@ -395,12 +400,14 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
                 return false;
             case MotionEvent.ACTION_MOVE:
                 if (!menuDragging) return false;
+                int minTop = getStatusBarInset() + dp(8);
+                int maxTop = root.getHeight() - getNavigationBarInset() - params.height - dp(8);
                 params.leftMargin = clamp(
                         menuDownLeft + Math.round(event.getRawX() - menuDownRawX),
-                        0, Math.max(0, root.getWidth() - params.width));
+                        dp(8), Math.max(dp(8), root.getWidth() - params.width - dp(8)));
                 params.topMargin = clamp(
                         menuDownTop + Math.round(event.getRawY() - menuDownRawY),
-                        0, Math.max(0, root.getHeight() - params.height));
+                        minTop, Math.max(minTop, maxTop));
                 view.setLayoutParams(params);
                 return true;
             case MotionEvent.ACTION_UP:
@@ -687,15 +694,42 @@ public final class MainActivity extends androidx.appcompat.app.AppCompatActivity
         return value < min ? min : (value > max ? max : value);
     }
 
+    private int getStatusBarInset() {
+        if (root != null) {
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(root);
+            if (insets != null) {
+                int top = insets.getInsets(WindowInsetsCompat.Type.statusBars()
+                        | WindowInsetsCompat.Type.displayCutout()).top;
+                if (top > 0) return top;
+            }
+        }
+        int statusId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        return statusId > 0 ? getResources().getDimensionPixelSize(statusId) : dp(24);
+    }
+
+    private int getNavigationBarInset() {
+        if (root != null) {
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(root);
+            if (insets != null) {
+                int bottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+                if (bottom > 0) return bottom;
+            }
+        }
+        int navId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        return navId > 0 ? getResources().getDimensionPixelSize(navId) : 0;
+    }
+
     /** Keeps the draggable menu inside the window after a rotation or resize. */
     private void clampMenuPosition() {
         if (menuButton == null) return;
         FrameLayout.LayoutParams params =
                 (FrameLayout.LayoutParams) menuButton.getLayoutParams();
-        params.leftMargin = clamp(params.leftMargin, 0,
-                Math.max(0, root.getWidth() - params.width));
-        params.topMargin = clamp(params.topMargin, 0,
-                Math.max(0, root.getHeight() - params.height));
+        int minTop = getStatusBarInset() + dp(8);
+        int maxTop = root.getHeight() - getNavigationBarInset() - params.height - dp(8);
+        params.leftMargin = clamp(params.leftMargin, dp(8),
+                Math.max(dp(8), root.getWidth() - params.width - dp(8)));
+        params.topMargin = clamp(params.topMargin, minTop,
+                Math.max(minTop, maxTop));
         menuButton.setLayoutParams(params);
     }
 
